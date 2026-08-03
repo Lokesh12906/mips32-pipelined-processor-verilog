@@ -2,6 +2,7 @@ module mips_32(clk1,clk2);
      input clk1,clk2;
      reg [31:0] PC,IF_ID_IR,IF_ID_NPC;
      reg [31:0] ID_EX_A,ID_EX_B,ID_EX_IMM,ID_EX_NPC,ID_EX_IR;
+     reg [31:0] EX_A,EX_B;
      reg [2:0] ID_EX_TYPE,EX_MEM_TYPE,MEM_WB_TYPE;
      reg EX_MEM_COND;
      reg [31:0] EX_MEM_ALUOUT, EX_MEM_B, EX_MEM_IR;
@@ -58,36 +59,68 @@ module mips_32(clk1,clk2);
             EX_MEM_IR<=ID_EX_IR;
             EX_MEM_TYPE<=ID_EX_TYPE;
             TAKEN_BRANCH<=0;
+            EX_A = ID_EX_A;
+            EX_B = ID_EX_B;
+            if ((ID_EX_TYPE==RR_ALU) || (ID_EX_TYPE==RI_ALU) || (ID_EX_TYPE==BRANCH) || (ID_EX_TYPE==LOAD) || (ID_EX_TYPE==STORE))
+                begin
+                    if (ID_EX_IR[25:21]!=5'b00000) begin
+                        if ((EX_MEM_TYPE==RR_ALU) && (EX_MEM_IR[15:11]==ID_EX_IR[25:21]))
+                            EX_A = EX_MEM_ALUOUT;
+                        else if ((EX_MEM_TYPE==RI_ALU) && (EX_MEM_IR[20:16]==ID_EX_IR[25:21]))
+                            EX_A = EX_MEM_ALUOUT;
+                        else if ((MEM_WB_TYPE==RR_ALU) && (MEM_WB_IR[15:11]==ID_EX_IR[25:21]))
+                            EX_A = MEM_WB_ALUOUT;
+                        else if ((MEM_WB_TYPE==RI_ALU) && (MEM_WB_IR[20:16]==ID_EX_IR[25:21]))
+                            EX_A = MEM_WB_ALUOUT;
+                        else if ((MEM_WB_TYPE==LOAD) && (MEM_WB_IR[20:16]==ID_EX_IR[25:21]))
+                            EX_A = MEM_WB_LMD;
+                    end
+                end
+            if ((ID_EX_TYPE==RR_ALU) || (ID_EX_TYPE==STORE))
+                begin
+                    if (ID_EX_IR[20:16]!=5'b00000) begin
+                        if ((EX_MEM_TYPE==RR_ALU) && (EX_MEM_IR[15:11]==ID_EX_IR[20:16]))
+                            EX_B = EX_MEM_ALUOUT;
+                        else if ((EX_MEM_TYPE==RI_ALU) && (EX_MEM_IR[20:16]==ID_EX_IR[20:16]))
+                            EX_B = EX_MEM_ALUOUT;
+                        else if ((MEM_WB_TYPE==RR_ALU) && (MEM_WB_IR[15:11]==ID_EX_IR[20:16]))
+                            EX_B = MEM_WB_ALUOUT;
+                        else if ((MEM_WB_TYPE==RI_ALU) && (MEM_WB_IR[20:16]==ID_EX_IR[20:16]))
+                            EX_B = MEM_WB_ALUOUT;
+                        else if ((MEM_WB_TYPE==LOAD) && (MEM_WB_IR[20:16]==ID_EX_IR[20:16]))
+                            EX_B = MEM_WB_LMD;
+                    end
+                end
             case (ID_EX_TYPE)
                 RR_ALU: begin
                   case(ID_EX_IR[31:26])
-                    ADD: EX_MEM_ALUOUT<=ID_EX_A + ID_EX_B;
-                    SUB: EX_MEM_ALUOUT<=ID_EX_A - ID_EX_B;
-                    AND: EX_MEM_ALUOUT<=ID_EX_A & ID_EX_B;                  
-                    OR: EX_MEM_ALUOUT<=ID_EX_A | ID_EX_B;
-                    SLT: EX_MEM_ALUOUT<=ID_EX_A < ID_EX_B;
-                    MUL: EX_MEM_ALUOUT<=ID_EX_A * ID_EX_B;
+                    ADD: EX_MEM_ALUOUT<=EX_A + EX_B;
+                    SUB: EX_MEM_ALUOUT<=EX_A - EX_B;
+                    AND: EX_MEM_ALUOUT<=EX_A & EX_B;                  
+                    OR: EX_MEM_ALUOUT<=EX_A | EX_B;
+                    SLT: EX_MEM_ALUOUT<=EX_A < EX_B;
+                    MUL: EX_MEM_ALUOUT<=EX_A * EX_B;
                     default:EX_MEM_ALUOUT<=32'd0;
                   endcase
                 end
                 RI_ALU: begin
                   case(ID_EX_IR[31:26]) 
-                    ADDI: EX_MEM_ALUOUT<=ID_EX_A + ID_EX_IMM;
-                    SUBI: EX_MEM_ALUOUT<=ID_EX_A - ID_EX_IMM;
-                    SLTI : EX_MEM_ALUOUT<=ID_EX_A < ID_EX_IMM;
+                    ADDI: EX_MEM_ALUOUT<=EX_A + ID_EX_IMM;
+                    SUBI: EX_MEM_ALUOUT<=EX_A - ID_EX_IMM;
+                    SLTI : EX_MEM_ALUOUT<=EX_A < ID_EX_IMM;
                     default:EX_MEM_ALUOUT<=32'd0;
                   endcase
                 end
                 STORE,LOAD: begin
-                    EX_MEM_ALUOUT<= ID_EX_A + ID_EX_IMM;
-                    EX_MEM_B<= ID_EX_B;
+                    EX_MEM_ALUOUT<= EX_A + ID_EX_IMM;
+                    EX_MEM_B<= EX_B;
                 end
                 BRANCH: begin
                     EX_MEM_ALUOUT <= ID_EX_NPC + ID_EX_IMM;
                     if (ID_EX_IR[31:26] == BEQZ)
-                        EX_MEM_COND <= (ID_EX_A == 0);
+                        EX_MEM_COND <= (EX_A == 0);
                     else
-                        EX_MEM_COND <= (ID_EX_A != 0);
+                        EX_MEM_COND <= (EX_A != 0);
                 end
             endcase                                
          end
