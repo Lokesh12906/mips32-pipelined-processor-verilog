@@ -18,19 +18,15 @@ module tb1;
            dut.REG[k]=k;
         dut.MEM[0] =32'h2801000a;
         dut.MEM[1] =32'h28020014;
-        dut.MEM[2] =32'h28030019;
-        dut.MEM[3]= 32'h0ce77800;
-        dut.MEM[4]= 32'h0ce77800;   
-        dut.MEM[5]= 32'h00222000;
-        dut.MEM[6]= 32'h0ce77800;
-        dut.MEM[7]= 32'h00832800;
-        dut.MEM[8]= 32'hfc000000;
+        dut.MEM[2] =32'h00222000;
+        dut.MEM[3] =32'hfc000000;
         dut.HALTED=0;
         dut.PC=0;
         dut.TAKEN_BRANCH=0;
-        #300
-        for (k=0;k<6;k++)
-           $display("R%1d - %2d",k,dut.REG[k]);           
+        #300;
+        $display("R1 - %0d", dut.REG[1]);
+        $display("R2 - %0d", dut.REG[2]);
+        $display("R4 - %0d", dut.REG[4]);
    end
    initial begin
         
