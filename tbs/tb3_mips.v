@@ -18,27 +18,21 @@ module tb_factorial;
     for (k = 0; k < 31; k = k + 1)
         dut.REG[k] = k;
 
-    dut.MEM[0]  = 32'h280A00C8; // ADDI  R10, R0, 200
-    dut.MEM[1]  = 32'h28020001; // ADDI  R2,  R0, 1
-    dut.MEM[2]  = 32'h0E94A000; // OR    R20, R20, R20  (dummy)
-    dut.MEM[3]  = 32'h21430000; // LW    R3,  0(R10)
-    dut.MEM[4]  = 32'h0E94A000; // OR    R20, R20, R20  (dummy)
-    dut.MEM[5]  = 32'h14431000; // Loop: MUL   R2, R2, R3
-    dut.MEM[6]  = 32'h2C630001; // SUBI  R3, R3, 1
-    dut.MEM[7]  = 32'h0E94A000; // OR    R20, R20, R20  (dummy)
-    dut.MEM[8]  = 32'h3460FFFC; // BNEQZ R3, Loop (-4)
-    dut.MEM[9]  = 32'h2542FFFE; // SW    R2, -2(R10)
-    dut.MEM[10] = 32'hFC000000; // HLT
-
-    dut.MEM[200] = 5;          // input n = 5
+    dut.MEM[0]  = 32'h2801000a; // ADDI  R1, R0, 10
+    dut.MEM[1]  = 32'h28020014; // ADDI  R2, R0, 20
+    dut.MEM[2]  = 32'h00222000; // ADD   R4, R1, R2
+    dut.MEM[3]  = 32'h04812800; // SUB   R5, R4, R1
+    dut.MEM[4]  = 32'hFC000000; // HLT
 
     dut.PC = 0;
     dut.HALTED = 0;
     dut.TAKEN_BRANCH = 0;
 
     #1200;
-    $display("Input  (n)        : %0d", dut.MEM[200]);
-    $display("Factorial result  : %0d", dut.MEM[198]);
+    $display("R1 - %0d", dut.REG[1]);
+    $display("R2 - %0d", dut.REG[2]);
+    $display("R4 - %0d", dut.REG[4]);
+    $display("R5 - %0d", dut.REG[5]);
   end
 
   // Waveform dump
